@@ -36,13 +36,30 @@ for db in "${DBS[@]}"; do
     echo "   -> backing up $db..."
 
     # Dump database
-    pg_dump -Fc -h $PG_HOST -U $PG_USER -p $PG_PORT $db > /tmp/"$FILENAME".dump
+    if [ "$DOCKER_IMAGE" == "" ]; then
+        pg_dump -Fc -h $PG_HOST -U $PG_USER -p $PG_PORT $db > $TEMP_PATH/"$FILENAME".dump
+    else 
+        docker run \
+            -it \
+            --rm \
+            --env PGPASSWORD=$PG_PASSWORD \
+            --volume $TEMP_PATH:/dumpvol \
+            --entrypoint /usr/local/bin/pg_dump \
+            -u $(id -u ${USER}):$(id -g ${USER}) \
+            $DOCKER_IMAGE \
+            --verbose \
+            --format=custom \
+            --file=/dumpvol/$FILENAME.dump \
+            --dbname=$db \
+            --username=$PG_USER \
+            --host=$PG_HOST
+    fi
 
     # Copy to S3
-    aws s3 cp /tmp/"$FILENAME".dump s3://$S3_PATH/"$FILENAME".dump --storage-class STANDARD_IA
+    aws s3 cp $TEMP_PATH/"$FILENAME".dump s3://$S3_PATH/"$FILENAME".dump --storage-class STANDARD_IA
 
     # Delete local file
-    rm /tmp/"$FILENAME".dump
+    rm $TEMP_PATH/"$FILENAME".dump
 
     # Log
     echo "      ...database $db has been backed up"

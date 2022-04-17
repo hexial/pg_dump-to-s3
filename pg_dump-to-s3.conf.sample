@@ -12,9 +12,16 @@
 PG_HOST="127.0.0.1"
 PG_USER="postgres"
 PG_PORT=5432
+PG_PASSWORD="password"
 
 # List of databases to backup (comma separated)
 PG_DATABASES="database1,database2,database3"
+
+# Docker settings
+DOCKER_IMAGE="postgres:13.6-alpine"
+
+# Temp file settings
+TEMP_PATH=/tmp
 
 # Bucket and path within S3
 S3_PATH="my_bucket/my_directory"
